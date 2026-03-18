@@ -101,7 +101,7 @@ def prepare_tables(*, q, psi_powers, twiddles):
         rev_idx[i] = int(format(i, f'0{log2N}b')[::-1], 2)
     psi_powers = np.ones(2 * N, dtype=np.int64)
     for i in range(1, 2 * N):
-        psi_powers[i] = mod_mul(psi_powers[i - 1], psi, q)
+        psi_powers[i] = (psi_powers[i - 1] * psi) % q
     twiddles = []
     length = 1
     while length < N:
