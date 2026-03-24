@@ -74,25 +74,24 @@ def ntt(x, *, q, psi_powers, twiddles):
     Returns:
         jnp.ndarray: NTT output, same shape as input
     """
-    A = x
-    A = A[:, psi_powers]
-    batch, N = A.shape
+    x = x[:, psi_powers]
+    batch, N = x.shape
     length = 1
     offset = 0
     while length < N:
         twiddle = twiddles[offset : offset + length]
         num_blocks = N // (2 * length)
-        A = A.reshape((batch, num_blocks, 2 * length))
-        U = A[:, :, :length]
-        V = A[:, :, length:]
+        x = x.reshape((batch, num_blocks, 2 * length))
+        U = x[:, :, :length]
+        V = x[:, :, length:]
         T = mod_mul(V, twiddle, q)
         U1 = mod_add(U, T, q)
         V1 = mod_sub(U, T, q)
-        A = jnp.concatenate([U1, V1], axis=2)
-        A = A.reshape((batch, N))
+        x = jnp.concatenate([U1, V1], axis=2)
+        x = x.reshape((batch, N))
         offset += length
         length *= 2
-    return A.astype(jnp.uint32)
+    return x
 
 
 def prepare_tables(*, q, psi_powers, twiddles):
