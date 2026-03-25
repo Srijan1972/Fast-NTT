@@ -11,8 +11,6 @@ where ψ is a primitive 2N-th root of unity (ψ^N ≡ -1 mod q).
 This is equivalent to a cyclic NTT on "twisted" input, where each coefficient
 x[n] is first multiplied by ψ^n.
 """
-import os
-os.environ["JAX_PLATFORMS"] = "gpu"
 import jax
 import jax.numpy as jnp
 import provided
@@ -21,6 +19,8 @@ import numpy as np
 # -----------------------------------------------------------------------------
 # Modular Arithmetic
 # -----------------------------------------------------------------------------
+
+q_inv = 0
 
 @jax.jit
 def mod_add(a, b, q):
@@ -48,19 +48,29 @@ def mod_sub(a, b, q):
     res = a64 - b64
     return jnp.where(res < 0, res + q, res).astype(jnp.uint32)
 
-@jax.jit(static_argnames=['q'])
+@jax.jit
 def mod_mul(a, b, q):
     """(a * b) mod q, elementwise."""
     # return (a * b) % q
+    # a64 = a.astype(jnp.uint64)
+    # b64 = b.astype(jnp.uint64)
+    # return ((a64 * b64) % q).astype(jnp.uint32)
     a64 = a.astype(jnp.uint64)
     b64 = b.astype(jnp.uint64)
-    return ((a64 * b64) % q).astype(jnp.uint32)
+    ab = a64 * b64
+    ab_low = ab.astype(jnp.uint32)
+    m = (ab_low * q_inv).astype(jnp.uint32)
+    mq = m.astype(jnp.uint64) * jnp.uint64(q)
+    t = ((ab + mq) >> 32).astype(jnp.uint32)
+    return jnp.where(t >= q, t - q, t)
+
+
 
 # -----------------------------------------------------------------------------
 # Core NTT
 # -----------------------------------------------------------------------------
 
-@jax.jit(static_argnames=['q'])
+@jax.jit
 def ntt(x, *, q, psi_powers, twiddles):
     """
     Compute the forward negacyclic NTT.
@@ -122,4 +132,8 @@ def prepare_tables(*, q, psi_powers, twiddles):
         twiddles[offset : offset + length] = psi_powers[power].astype(np.uint32)
         offset += length
         length *= 2
+    q_inv = (-pow(int(q), -1, 1 << 32)) % (1 << 32)
+    R = 1 << 32
+    Rq = R % q
+    twiddles = (twiddles.astype(np.uint64) * Rq) % q
     return jnp.array(rev_idx, dtype=jnp.uint32), jnp.array(twiddles, dtype=jnp.uint32)
