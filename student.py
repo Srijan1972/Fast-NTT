@@ -25,11 +25,6 @@ q_inv = 0
 @jax.jit
 def mod_add(a, b, q):
     """(a + b) mod q, elementwise."""
-    # res = a + b
-    # needs_sub = (res < a) | (res >= q)
-    # return res - jnp.where(needs_sub, q, jnp.uint32(0))
-    # res = a + b
-    # return res - (res >= q) * q
     a64 = a.astype(jnp.uint64)
     b64 = b.astype(jnp.uint64)
     res = a64 + b64
@@ -38,11 +33,6 @@ def mod_add(a, b, q):
 @jax.jit
 def mod_sub(a, b, q):
     """(a - b) mod q, elementwise."""
-    # needs_wrap = a < b
-    # res = a - b
-    # return res + jnp.where(needs_wrap, q, 0)
-    # res = a - b
-    # return res + (res < 0) * q
     a64 = a.astype(jnp.int64)
     b64 = b.astype(jnp.int64)
     res = a64 - b64
@@ -51,10 +41,6 @@ def mod_sub(a, b, q):
 @jax.jit
 def mod_mul(a, b, q):
     """(a * b) mod q, elementwise."""
-    # return (a * b) % q
-    # a64 = a.astype(jnp.uint64)
-    # b64 = b.astype(jnp.uint64)
-    # return ((a64 * b64) % q).astype(jnp.uint32)
     a64 = a.astype(jnp.uint64)
     b64 = b.astype(jnp.uint64)
     ab = a64 * b64

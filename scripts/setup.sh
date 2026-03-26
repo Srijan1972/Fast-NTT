@@ -12,6 +12,8 @@ if command -v nvidia-smi >/dev/null 2>&1; then
   elif [ "${major}" -ge 525 ]; then
     extra="cuda12"
   fi
+elif ls /dev/accel* >/dev/null 2>&1; then
+  extra="tpu"
 fi
 
 if [ -n "${extra}" ]; then
